@@ -1,0 +1,45 @@
+# Textos de la ventana principal
+mainwindow.title: Extractor de audio
+label_sel_fich_video: Seleccionar fichero de video
+search_button: Buscar archivo
+but_go_to_paso2: Siguiente
+
+# Textos de la ventana de seleccion de stream
+info_video_box.title: Informacion video
+info_video_box.labelNombre: Nombre archivo
+info_video_box.labelRes: Resolucion
+info_video_box.labelCodec: Codec
+
+streamsBox.title: Streams de audio
+streamsBox.streams_layout.but.type: Tipo
+streamsBox.streams_layout.but.codec: Codec
+streamsBox.streams_layout.but.lang: Idioma
+
+info_stream_box.title: Informacion stream
+info_stream_box.labels:
+  - "Idioma:"
+  - "Nombre de codec:"
+  - "Nombre largo de codec:"
+  - "Canales:"
+  - "Disposicion de canales:"
+  - "Numero de frames:"
+  - "Tamanio (bytes):"
+
+but_back_to_paso_1: Atras
+but_go_to_paso_3: Siguiente
+
+# Textos de la ventana de conversion
+but_back_to_paso_2: Atras
+button_convertir: Convertir
+button_sel_carpeta: Seleccionar archivo
+labelNombreCarpeta: Seleccionar fichero de salida
+groupBox_2.title: ""
+
+# Textos de la ventana de configuracion
+window_title: Configuracion
+groupbox_lang: Configuracion idioma
+groupbox_ffmpeg_path: Path ffmpeg
+cambiar_path_button: Cambiar
+lbl_sel_lang: Seleccion idioma
+acept_config_button: Aceptar
+cancel_config_button: Cancelar

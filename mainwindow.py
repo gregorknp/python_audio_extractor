@@ -3,11 +3,11 @@ from PyQt5.QtWidgets import QPushButton
 from pantalla_config import PantallaConfig
 from functools import partial
 from ventana_wait import VentanaWait
+from config import Config
 import sys
 import yaml
 import subprocess
 import os
-
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -15,21 +15,24 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__()
         uic.loadUi('mainwindow.ui', self)   # Se carga el fichero .ui que contiene los elementos graficos
 
+        self.setWindowTitle("Extractor de audio")  # Se establece el titulo de la ventana
+
         # Se establecen los disparadores de eventos para los componentes
         self.lineEdit.textChanged.connect(partial(self.check_if_text, self.but_go_to_paso2))
-        self.searchButton.clicked.connect(self.search_video_file)
+        self.search_button.clicked.connect(self.search_video_file)
         self.but_go_to_paso2.clicked.connect(self.go_to_paso2)
         self.configButton.clicked.connect(self.show_config)  # TODO
 
         self.stackedWidget.setCurrentWidget(self.mainWindow)
 
         # Carga y verificacion de configuracion
-        self.configuracion = {}
-        self.cargar_config()
-        self.check_config()
+        self.configuracion = Config('config/config.yml')
+#        self.check_config()
 
         # Se instancia la ventana de configuracion
         self.pantalla_configuracion = PantallaConfig(self.configuracion)
+
+        self.pantalla_configuracion.cambio_idioma_signal.connect(self.traducir_textos)
 
         """
         Se inicializan los componentes de la ventana ventana_streams
@@ -38,7 +41,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Se crean las etiquetas del panel de informacion del stream
         # Se visualiza la informacion del stream en la seccion.
-        campos = ["Idioma:", "Codec Name:", "Codec Long Name:", "Channels:", "Channel Layout:", "Number of frames:", "Size (bytes):"]
+        campos = self.configuracion.lang_dict[self.configuracion.config_dict['idioma']]['info_stream_box.labels']
 
         for campo in campos:
             self.campos.addWidget(QtWidgets.QLabel(campo))
@@ -56,13 +59,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.but_back_to_paso_1.clicked.connect(self.go_back_to_paso_1)
         self.line_edit_carpeta.textChanged.connect(partial(self.check_if_text, self.button_convertir))
 
-        self.setWindowTitle("Extractor de audio")  # Se establece el titulo de la ventana
-
         # Se ajusta el alto de la ventana al contenido para que no haya demasiado espacio vacío en la parte baja
         self.setGeometry(20,20, 831, 300)
 
         # Stream de audio que se convertira
         self.stream_seleccionado = None
+
+        self.traducir_textos()
+
 
         self.show()  # Muestra la ventana
 
@@ -130,11 +134,11 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         # Se obtiene la informacion del video y se muestra
         print(self.lineEdit.text())
-        print(self.configuracion['path_ffmpeg'])
+        print(self.configuracion.config_dict['path_ffmpeg'])
 
         try:
             # Se forma el comando para obtener la informacion del video
-            path_ffprobe = os.path.join(self.configuracion['path_ffmpeg'], "ffprobe.exe")
+            path_ffprobe = os.path.join(self.configuracion.config_dict['path_ffmpeg'], "ffprobe.exe")
             comando = [path_ffprobe,
                        str(self.lineEdit.text()),
                        "-show_streams",
@@ -154,9 +158,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 print(f"id: {stream['index']} tipo: {stream['codec_type']}")
 
                 # Si es un audio, creo un boton con la informacion y lo añado a la lista de streams.
+                lang_dict = self.configuracion.lang_dict[self.configuracion.config_dict['idioma']]
                 if stream['codec_type'] == "audio":
-                    stream_info = f"Stream: {stream['index']} Tipo: {stream['codec_type']}\n" \
-                                  f"Codec: {stream['codec_name']} Idioma: {stream.get('tags').get('language') if 'tags' in stream else 'None'}"
+                    stream_info = f"Stream: {stream['index']} {lang_dict['streamsBox.streams_layout.but.type']}: {stream['codec_type']}\n" \
+                                  f"{lang_dict['streamsBox.streams_layout.but.codec']}: {stream['codec_name']} {lang_dict['streamsBox.streams_layout.but.lang']}: {stream.get('tags').get('language') if 'tags' in stream else 'None'}"
                     button = QPushButton(stream_info, self)
                     button.setObjectName(f"but_stream_{stream['index']}")
 
@@ -270,27 +275,6 @@ class MainWindow(QtWidgets.QMainWindow):
         :return:
         """
         self.pantalla_configuracion.show()
-
-    def cargar_config(self):
-        """
-        Abre y carga en memoria la informacion del fichero de configuracion
-        :return:
-        """
-
-        with open("config.yml") as file:
-            self.configuracion = yaml.safe_load(file)
-
-            print(self.configuracion)
-
-    def check_config(self):
-        """
-        Verifica si tenemos que visualizar algun aviso por la configuracion, por ejemplo, si el path a los archivos
-        ffmpeg no está configurado
-        :return:
-        """
-        for key, value in self.configuracion.items():
-            if not value:
-                print(f"Aviso. El campo {key} no esta asignado. Se aplicara valor por defecto")
 
     def seleccionar_fichero_salida(self):
         """
@@ -430,6 +414,47 @@ class MainWindow(QtWidgets.QMainWindow):
         self.line_edit_carpeta.setText("")
         self.button_convertir.setEnabled(False)
 
+    def traducir_textos(self):
+        """
+        Rutina que se ejecuta cuando se cambia el idioma de la ventana de configuracion o cuando se arranca la
+        aplicacion para establecer los textos en el idioma actualmente configurado
+
+        Modifica el texto de los elementos graficos en caliente
+        :return:
+        """
+        # Culturilla. Como en python los parametros son pasados "por referencia" cuando cambio el idioma en la
+        # ventana de configuracion, el valor en self.configuracion.config_dict['idioma'] ya se ha actualizado aqui!
+        # asi que lo puedo utilizar directamente
+
+        # Se obtiene el idioma actual
+        dict_idioma = self.configuracion.lang_dict[self.configuracion.config_dict['idioma']]
+
+        # y se cambian todos los textos de la interfaz
+        # Se modifican los textos de la ventana principal
+        self.setWindowTitle(dict_idioma['mainwindow.title'])
+        self.label_sel_fich_video.setText(dict_idioma['label_sel_fich_video'])
+        self.search_button.setText(dict_idioma['search_button'])
+        self.but_go_to_paso2.setText(dict_idioma['but_go_to_paso2'])
+
+        # Textos de la ventana de seleccion de stream
+        self.info_video_box.setTitle(dict_idioma['info_video_box.title'])
+        self.labelNombre.setText(dict_idioma['info_video_box.labelNombre'])
+        self.labelRes.setText(dict_idioma['info_video_box.labelRes'])
+        self.labelCodec.setText(dict_idioma['info_video_box.labelCodec'])
+
+        self.streamsBox.setTitle(dict_idioma['streamsBox.title'])
+        self.info_stream_box.setTitle(dict_idioma['info_stream_box.title'])
+
+        self.but_back_to_paso_1.setText(dict_idioma['but_back_to_paso_1'])
+        self.but_go_to_paso_3.setText(dict_idioma['but_go_to_paso_3'])
+
+        # Textos de la ventana de seleccion de fichero de salida
+        self.groupBox_2.setTitle(dict_idioma['groupBox_2.title'])
+        self.but_back_to_paso_2.setText(dict_idioma['but_back_to_paso_2'])
+        self.button_convertir.setText(dict_idioma['button_convertir'])
+        self.button_sel_carpeta.setText(dict_idioma['button_sel_carpeta'])
+        self.labelNombreCarpeta.setText(dict_idioma['labelNombreCarpeta'])
+
 
 class Worker(QtCore.QObject):
     """
@@ -467,7 +492,7 @@ class Worker(QtCore.QObject):
         # control sobre la entrada por teclado, con '-y' siempre sobreescribimos el fichero.
         # No nos importa porque la seleccion del fichero de salida mediante QFileDialog.getSaveFileName ya avisa
         # de si queremos sobreescribir el archivo
-        comando = [f"{self.configuracion['path_ffmpeg']}\\ffmpeg.exe",
+        comando = [f"{self.configuracion.config_dict['path_ffmpeg']}\\ffmpeg.exe",
                    "-y",
                    "-i",
                    self.path_fichero_video,

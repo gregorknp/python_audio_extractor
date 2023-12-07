@@ -1,0 +1,45 @@
+# Main window texts
+mainwindow.title: Audio extractor
+label_sel_fich_video: Select video file
+search_button: Search file
+but_go_to_paso2: Next
+
+# Stream selection window texts
+info_video_box.title: Video information
+info_video_box.labelNombre: File name
+info_video_box.labelRes: Resolution
+info_video_box.labelCodec: Codec
+
+streamsBox.title: Audio streams
+streamsBox.streams_layout.but.type: Type
+streamsBox.streams_layout.but.codec: Codec
+streamsBox.streams_layout.but.lang: Language
+
+info_stream_box.title: Stream information
+info_stream_box.labels:
+  - "Language:"
+  - "Codec Name:"
+  - "Codec Long Name:"
+  - "Channels:"
+  - "Channel Layout:"
+  - "Number of frames:"
+  - "Size (bytes):"
+
+but_back_to_paso_1: Back
+but_go_to_paso_3: Next
+
+# Convertion window texts
+but_back_to_paso_2: Back
+button_convertir: Convert
+button_sel_carpeta: Select file
+labelNombreCarpeta: Select output file
+groupBox_2.title: ""
+
+# Configuration window texts
+window_title: Configuration
+groupbox_lang: Language configuration
+groupbox_ffmpeg_path: Path ffmpeg
+cambiar_path_button: Change
+lbl_sel_lang: Select language
+acept_config_button: Acept
+cancel_config_button: Cancel

@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="QGroupBox" name="groupBox">
+  <widget class="QGroupBox" name="groupbox_ffmpeg_path">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -61,7 +61,7 @@
     </property>
    </widget>
   </widget>
-  <widget class="QPushButton" name="aceptar_config_button">
+  <widget class="QPushButton" name="acept_config_button">
    <property name="geometry">
     <rect>
      <x>80</x>
@@ -74,7 +74,7 @@
     <string>Aceptar</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="cancelar_config_button">
+  <widget class="QPushButton" name="cancel_config_button">
    <property name="geometry">
     <rect>
      <x>210</x>
@@ -99,6 +99,52 @@
    <property name="orientation">
     <enum>Qt::Horizontal</enum>
    </property>
+  </widget>
+  <widget class="QGroupBox" name="groupbox_lang">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>100</y>
+     <width>361</width>
+     <height>101</height>
+    </rect>
+   </property>
+   <property name="title">
+    <string>Idioma</string>
+   </property>
+   <widget class="QLabel" name="lbl_sel_lang">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>20</y>
+      <width>111</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Selección idioma</string>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="combobox_lang">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>40</y>
+      <width>171</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text">
+      <string>Castellano</string>
+     </property>
+    </item>
+    <item>
+     <property name="text">
+      <string>English</string>
+     </property>
+    </item>
+   </widget>
   </widget>
  </widget>
  <resources/>

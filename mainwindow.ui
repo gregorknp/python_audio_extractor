@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="mainWindow">
      <widget class="QPushButton" name="but_go_to_paso2">
@@ -56,7 +56,7 @@
        <string>...</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="searchButton">
+     <widget class="QPushButton" name="search_button">
       <property name="geometry">
        <rect>
         <x>710</x>
@@ -79,7 +79,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QLabel" name="label">
+     <widget class="QLabel" name="label_sel_fich_video">
       <property name="geometry">
        <rect>
         <x>20</x>
