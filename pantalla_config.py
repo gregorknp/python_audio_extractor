@@ -6,6 +6,8 @@ from config import Config
 # tengan formato windows o linux
 # TODO La primera vez que se configure el programa, se tiene que indicar que hay que configurar las rutas
 
+import logging
+
 
 class PantallaConfig(QtWidgets.QDialog):
 
@@ -35,13 +37,14 @@ class PantallaConfig(QtWidgets.QDialog):
 
         # Se establece el texto de los elementos graficos en funcion del idioma
         self.cambio_textos(self.configuracion.config_dict['idioma'])
+        logging.info("Creacion de pantalla de configuracion")
 
     def guardar_cambios(self):
         """
+        Metodo que se ejcuta cuando se pincha en el boton "Aceptar"
         Se recoge la informacion de los campos y se guardan en el fichero de configuracion
-        :return:
+        :return: None
         """
-        print("[guardar_cambios]")
         self.configuracion.config_dict['path_ffmpeg'] = self.label.text()
         self.configuracion.config_dict['idioma'] = self.combobox_lang.currentText()
 
@@ -51,18 +54,20 @@ class PantallaConfig(QtWidgets.QDialog):
         with open(self.configuracion.config_file, 'w') as outfile:
             yaml.dump(self.configuracion.config_dict, outfile, default_flow_style=False)
 
+        logging.info("Se ha modificado la configuracion")
         # Se cierre la ventana
         self.close()
 
     def cancelar_cambios(self):
         """
-        No se tienen en cuenta los cambios en la configuracion
+        Metodo que se ejecuta cuando se pincha en el boton "Cancelar"
+
+        No se tienen en cuenta los cambios en la configuracion y se cierra la ventana
         :return:
         """
-        print("[cancelar_cambios]")
 
         # Se cierra la ventana sin hacer ningun cambio
-        # Se cierre la ventana
+        logging.info("Se sale de la ventana de configuracion sin realizar ningun cambio")
         self.close()
 
     def cambiar_path(self):
@@ -73,14 +78,14 @@ class PantallaConfig(QtWidgets.QDialog):
         :return:
         """
         try:
-            fname = QtWidgets.QFileDialog.getExistingDirectory(self, ('Seleccionar archivo de video'), "")
-
-            print(f"DEBUG. Carpeta seleccionada: {fname}")
+            fname = QtWidgets.QFileDialog.getExistingDirectory(self, 'Seleccionar archivo de video', "")
 
             # Se pone la ruta del archivo en el cuadro de texto
             self.label.setText(str(fname))
+            logging.info(f"Se selecciona ruta para binarios ffmpeg: {str(fname)}")
         except Exception as e:
-            print(e)
+            error_logger = logging.getLogger("error_logger")
+            error_logger.critical(f"Se produce error: {e}", stack_info=True)
 
     def cambio_idioma(self):
         """
@@ -91,7 +96,7 @@ class PantallaConfig(QtWidgets.QDialog):
         """
 
         idioma_actual = str(self.combobox_lang.currentText())
-
+        logging.info(f"Se selecciona idioma: {idioma_actual}")
         self.cambio_textos(idioma_actual)
 
     def cambio_textos(self, idioma):
@@ -107,3 +112,7 @@ class PantallaConfig(QtWidgets.QDialog):
         self.acept_config_button.setText(self.configuracion.lang_dict[idioma]['acept_config_button'])
         self.cancel_config_button.setText(self.configuracion.lang_dict[idioma]['cancel_config_button'])
 
+        logging.info(f"Se modifican los textos de la ventana.")
+
+    def closeEvent(self, event):
+        self.cancelar_cambios()

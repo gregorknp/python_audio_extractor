@@ -1,5 +1,5 @@
 import yaml
-
+import logging
 
 class Config:
     """
@@ -28,7 +28,8 @@ class Config:
         with open(self.config_file) as file:
             self.config_dict = yaml.safe_load(file)
 
-            print(self.config_dict)
+            logging.debug(f"Configuracion leida de fichero")
+            logging.debug(self.config_dict)
 
     def check_config(self):
         """

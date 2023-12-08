@@ -1,5 +1,5 @@
-# from PyQt6 import QtCore, QtGui, QtWidgets, uic
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
+import logging
 
 
 class VentanaWait(QtWidgets.QDialog):
@@ -16,6 +16,4 @@ class VentanaWait(QtWidgets.QDialog):
         self.labelLoading.setMovie(self.movie)
         self.movie.setScaledSize(size)
         self.movie.start()
-
-        print("VentanaWait")
 

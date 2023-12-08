@@ -5,9 +5,11 @@ from functools import partial
 from ventana_wait import VentanaWait
 from config import Config
 import sys
-import yaml
 import subprocess
 import os
+import logging
+from logging import config
+import time
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -31,8 +33,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Se instancia la ventana de configuracion
         self.pantalla_configuracion = PantallaConfig(self.configuracion)
-
         self.pantalla_configuracion.cambio_idioma_signal.connect(self.traducir_textos)
+
+        # Se configura el sistema de logs
+        logging.config.dictConfig(self.configuracion.config_dict['logging'])
 
         """
         Se inicializan los componentes de la ventana ventana_streams
@@ -47,8 +51,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.campos.addWidget(QtWidgets.QLabel(campo))
             self.valores.addWidget(QtWidgets.QLabel(""))  # Etiqueta vacia
 
-        print(self.valores.count())
-
         """
         Se inicializan los componentes de la ventana ventana_convertir
         """
@@ -60,14 +62,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.line_edit_carpeta.textChanged.connect(partial(self.check_if_text, self.button_convertir))
 
         # Se ajusta el alto de la ventana al contenido para que no haya demasiado espacio vacío en la parte baja
-        self.setGeometry(20,20, 831, 300)
+        self.setGeometry(20, 20, 831, 300)
 
         # Stream de audio que se convertira
         self.stream_seleccionado = None
 
         self.traducir_textos()
-
-
+        logging.info("Inicio de la aplicacion")
+        logging.debug("Inicio de la aplicacion")
         self.show()  # Muestra la ventana
 
     def go_back_to_paso_1(self):
@@ -78,7 +80,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         :return: None
         """
-
+        logging.info("Se vuelve a la ventana principal")
         self.limpia_ventana_2()
         self.limpia_ventana_1()
 
@@ -93,7 +95,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         :return:
         """
-
+        logging.info("Volvemos a la ventana de seleccion del stream de audio")
         self.limpia_ventana_3()
         self.stackedWidget.setCurrentWidget(self.ventana_streams)
 
@@ -111,6 +113,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
 
         if self.check_file_exists():
+            logging.info("Vamos a la ventana de seleccion del audio a extraer")
             self.stackedWidget.setCurrentWidget(self.ventana_streams)
 
             # Se aumenta el alto de la ventana para poder ver todos los componentes
@@ -118,6 +121,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
             self.get_info_file()
         else:
+            logging.error(f"El archivo seleccionado: {self.lineEdit.text()} no existe")
+
             # Se crea un QMessageBox para mostrar el error al usuario
             msg = QtWidgets.QMessageBox()
             msg.setText(f"El archivo seleccionado: {self.lineEdit.text()} no existe\n"
@@ -132,9 +137,6 @@ class MainWindow(QtWidgets.QMainWindow):
         Metodo que obtiene la informacion del archivo de video y rellena los elementos graficos de la ventana
         :return:
         """
-        # Se obtiene la informacion del video y se muestra
-        print(self.lineEdit.text())
-        print(self.configuracion.config_dict['path_ffmpeg'])
 
         try:
             # Se forma el comando para obtener la informacion del video
@@ -145,17 +147,17 @@ class MainWindow(QtWidgets.QMainWindow):
                        "-print_format",
                        "json"]
 
-            print(comando)
-            list_files = subprocess.run(comando, capture_output=True, text=True)
-            print(list_files.stdout)
+            logging.debug(f"Comando: {comando}")
 
+            # Se ejecuta el comando
+            list_files = subprocess.run(comando, capture_output=True, text=True)
+            logging.debug(f"Info devuelta por el comando: {list_files.stdout}")
             dict_info_peli = eval(list_files.stdout)
-            print(type(dict_info_peli))
 
             # Despues, muestro la informacion de los streams disponibles
             for stream in dict_info_peli["streams"]:
-                # Muesto info de debug TODO quitar
-                print(f"id: {stream['index']} tipo: {stream['codec_type']}")
+
+                logging.debug(f"id: {stream['index']} tipo: {stream['codec_type']}")
 
                 # Si es un audio, creo un boton con la informacion y lo añado a la lista de streams.
                 lang_dict = self.configuracion.lang_dict[self.configuracion.config_dict['idioma']]
@@ -165,7 +167,7 @@ class MainWindow(QtWidgets.QMainWindow):
                     button = QPushButton(stream_info, self)
                     button.setObjectName(f"but_stream_{stream['index']}")
 
-                    # utilizo partial para poder pasar el index del stream como parametro
+                    # Utilizo partial para poder pasar el index del stream como parametro
                     button.clicked.connect(partial(self.select_stream,
                                                    stream))
                     self.streams_layout.addWidget(button)
@@ -191,6 +193,10 @@ class MainWindow(QtWidgets.QMainWindow):
             msg.setIcon(QtWidgets.QMessageBox.Critical)
             msg.exec_()
 
+            # Error log
+            error_logger = logging.getLogger("error_logger")
+            error_logger.critical(f"Se ha producido el siguiente error: {e}")
+
             # Volvemos a la ventana anterior
             self.go_back_to_paso_1()
 
@@ -199,9 +205,10 @@ class MainWindow(QtWidgets.QMainWindow):
         Metodo que se ejecuta cuando se pincha sobre uno de los botones que representa un stream
         :return:
         """
-        print(f"Se ha seleccionado el stream {stream['index']}")
+        logging.info(f"Se ha seleccionado el stream #{stream['index']}")
         self.stream_seleccionado = stream
 
+        # Se obtiene la informacion del stream seleccionado para mostrarse en pantalla
         atributos = []
         atributos.append(stream.get('tags').get("language"))
         atributos.append(stream.get("codec_name"))
@@ -211,8 +218,8 @@ class MainWindow(QtWidgets.QMainWindow):
         atributos.append(str(stream.get("NUMBER_OF_FRAMES")))
         atributos.append(str(stream.get("tags").get("NUMBER_OF_BYTES")))
 
+        # Se itera sobre las etiquetas del QVBoxLayout y se establece el texto con el correspondiente atributo
         for index in range(self.valores.count()):
-            print(index, atributos[index])
             label = self.valores.itemAt(index).widget()
             label.setText(atributos[index])
 
@@ -220,6 +227,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.but_go_to_paso_3.setEnabled(True)
 
     def go_to_paso3(self):
+        logging.info("Vamos a la ventana de extraccion del audio")
         self.stackedWidget.setCurrentWidget(self.ventana_convertir)
 
     def check_file_exists(self):
@@ -229,7 +237,6 @@ class MainWindow(QtWidgets.QMainWindow):
         TODO De momento solo verifico si el texto no es vacio
         :return:
         """
-        print(f"DEBUG. check_file_exists")
         return os.path.exists(self.lineEdit.text())
 
     def check_if_text(self, boton: QPushButton):
@@ -244,7 +251,6 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         line_edit = self.sender()  # Se obtiene el objeto  que ha disparado el evento
         if line_edit.text():
-            print(f"DEBUG. Tenemos {str(line_edit.text())} en el cuadro de texto")
             boton.setEnabled(True)
         else:
             boton.setEnabled(False)
@@ -259,14 +265,11 @@ class MainWindow(QtWidgets.QMainWindow):
         fname = QtWidgets.QFileDialog.getOpenFileName(self, 'Seleccionar archivo de video',
                                             'c:\\', "Video files (*.mkv);;All files (*) ")
 
-
         # Si el sistema es Windows
-        print(QtCore.QDir.toNativeSeparators(str(fname)))
-
-        print(f"DEBUG. Archivo seleccionado: {fname}")
+        # print(QtCore.QDir.toNativeSeparators(str(fname)))
+        logging.info(f"Se selecciona archivo: {str(fname[0])}")
 
         # Se pone la ruta del archivo en el cuadro de texto
-        #self.lineEdit.setText(str(fname[0]))
         self.lineEdit.setText(QtCore.QDir.toNativeSeparators(str(fname[0])))
 
     def show_config(self):
@@ -274,6 +277,7 @@ class MainWindow(QtWidgets.QMainWindow):
         Muestra la ventana de configuracion de la aplicacion
         :return:
         """
+        logging.info("Acceso a pantalla configuracion")
         self.pantalla_configuracion.show()
 
     def seleccionar_fichero_salida(self):
@@ -284,25 +288,19 @@ class MainWindow(QtWidgets.QMainWindow):
         :return:
         """
         try:
-            # fname = QtWidgets.QFileDialog.getExistingDirectory(self, ('Seleccionar carpeta de salida'), "")
-            #
-            # print(f"DEBUG. Carpeta seleccionada: {fname}")
-            #
-            # # Se pone la ruta del archivo en el cuadro de texto
-            # self.line_edit_carpeta.setText(str(fname))
-
-            fileName = QtWidgets.QFileDialog.getSaveFileName(self, ("Especificar archivo de salida"),
+            out_filename = QtWidgets.QFileDialog.getSaveFileName(self, ("Especificar archivo de salida"),
                                                     "./audio.mp4",
                                                     ("Audio (*.mp4)"))
 
-            print(fileName[0])
-            self.line_edit_carpeta.setText(str(fileName[0]))
+            logging.info(f"Se seleccionado {str(out_filename[0])} como fichero de salida")
+            self.line_edit_carpeta.setText(str(out_filename[0]))
 
             # Se habilita el boton 'Convertir'
             self.button_convertir.setEnabled(True)
 
         except Exception as e:
-            print(e)
+            error_logger = logging.getLogger("error_logger")
+            error_logger.critical(f"Se ha producido el error: {e}", stack_info=True)
 
     def convertir(self):
         """
@@ -311,20 +309,16 @@ class MainWindow(QtWidgets.QMainWindow):
         Crea un hilo que ejecuta el comando ffmpeg para extraer el audio. Muestra una ventana de espera para dar feedback
         al usuario.
 
-        :return:
+        :return: None
         """
 
         # Hay que verificar si el fichero realmente existe, por si se ha modificado el contenido del cuadro de texto
 
-
         # Coge el nombre de la carpeta y el nombre del fichero y genera el fichero de salida
-        nombre_fichero = self.line_edit_carpeta.text()
-        print(f"[convertir] {nombre_fichero}")
+        out_filename = self.line_edit_carpeta.text()
 
         self.thread = QtCore.QThread()
-
-        self.worker = Worker(self.stream_seleccionado, nombre_fichero, self.configuracion, self.lineEdit.text())
-
+        self.worker = Worker(self.stream_seleccionado, out_filename, self.configuracion, self.lineEdit.text())
         self.worker.moveToThread(self.thread)
 
         # Se mapean funciones manejadoras a los eventos del hilo
@@ -332,6 +326,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.mata_gif)
         self.worker.inicio.connect(self.muestra_gif)
+
+        # Comienza la conversion
         self.thread.start()
 
     def muestra_gif(self):
@@ -455,6 +451,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.button_sel_carpeta.setText(dict_idioma['button_sel_carpeta'])
         self.labelNombreCarpeta.setText(dict_idioma['labelNombreCarpeta'])
 
+    def closeEvent(self, event):
+        logging.info("Finaliza la aplicacion")
+
 
 class Worker(QtCore.QObject):
     """
@@ -473,19 +472,22 @@ class Worker(QtCore.QObject):
         self.configuracion = configuracion
         self.path_fichero_video = path_fichero_video
 
-        print(self.stream_seleccionado)
-        print(self.path_fichero_salida)
-        print(self.path_fichero_video)
+        logging.info("Se crea hilo para la extraccion del audio")
 
     def run(self):
         """
         Rutina que realiza el proceso de extracion del audio
-        :return:
-        """
-        # Se muestra la ventana de esperar
-        print("comienza el hilo")
 
-        print("antes de ejecutar subprocess")
+        Ejecuta el comando ffmpeg con los parametros necesarios para la extraccion del audio.
+        Tanto al inicio como al final de la extraccion, la clase emite señales para notificar a la clase
+        principal el estado del proceso
+
+        :return: None
+        """
+        inicio = time.time()
+        logging.info("Comienza la extraccion del audio:")
+        logging.info(f"Fichero origen: {self.path_fichero_video}")
+        logging.info(f"Fichero destino: {self.path_fichero_salida}")
         self.inicio.emit()  # Se informa que el hilo ha comenzado
 
         # Si el fichero de salida existe, ffmpeg preguntara si queremos sobreescribir el fichero. Como no tenemos
@@ -502,15 +504,16 @@ class Worker(QtCore.QObject):
                    "libmp3lame",
                    self.path_fichero_salida]
 
-        print(f"Comando para extraer el audio: {" ".join(comando)}")
+        logging.debug(f"Comando para extraer el audio: {" ".join(comando)}")
         try:
             list_files = subprocess.run(comando, capture_output=True, text=True)
         except Exception as e:
-            print(e)
+            error_logger = logging.getLogger(f"Se ha producido un error: {e}")
         finally:
             # Independientemente de si hay error, se informa que el proceso ha finalizado haciendo emit()
             # de la señal "finished".
-            print("finaliza el subprocess")
+            fin = time.time()
+            logging.info(f"Finaliza el proceso de extraccion del audio. Tiempo de proceso: {(fin - inicio):.2f}s")
             self.finished.emit()
 
 
