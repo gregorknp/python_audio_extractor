@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>851</width>
-    <height>727</height>
+    <width>861</width>
+    <height>740</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,7 +62,7 @@
         <x>710</x>
         <y>90</y>
         <width>91</width>
-        <height>24</height>
+        <height>31</height>
        </rect>
       </property>
       <property name="text">
@@ -75,8 +75,11 @@
         <x>20</x>
         <y>90</y>
         <width>671</width>
-        <height>22</height>
+        <height>31</height>
        </rect>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
       </property>
      </widget>
      <widget class="QLabel" name="label_sel_fich_video">
@@ -160,21 +163,21 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <rect>
          <x>10</x>
          <y>20</y>
-         <width>49</width>
+         <width>101</width>
          <height>16</height>
         </rect>
        </property>
        <property name="text">
-        <string>Nombre:</string>
+        <string>Nombre archivo:</string>
        </property>
       </widget>
       <widget class="QLabel" name="labelNombreStr">
        <property name="geometry">
         <rect>
-         <x>100</x>
+         <x>130</x>
          <y>20</y>
-         <width>681</width>
-         <height>16</height>
+         <width>651</width>
+         <height>20</height>
         </rect>
        </property>
        <property name="text">
@@ -186,7 +189,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <rect>
          <x>10</x>
          <y>40</y>
-         <width>61</width>
+         <width>101</width>
          <height>16</height>
         </rect>
        </property>
@@ -197,10 +200,10 @@ li.checked::marker { content: &quot;\2612&quot;; }
       <widget class="QLabel" name="labelResStr">
        <property name="geometry">
         <rect>
-         <x>100</x>
+         <x>130</x>
          <y>40</y>
-         <width>681</width>
-         <height>16</height>
+         <width>651</width>
+         <height>20</height>
         </rect>
        </property>
        <property name="text">
@@ -212,7 +215,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <rect>
          <x>10</x>
          <y>60</y>
-         <width>61</width>
+         <width>101</width>
          <height>16</height>
         </rect>
        </property>
@@ -223,10 +226,10 @@ li.checked::marker { content: &quot;\2612&quot;; }
       <widget class="QLabel" name="labelCodecStr">
        <property name="geometry">
         <rect>
-         <x>100</x>
+         <x>130</x>
          <y>60</y>
-         <width>681</width>
-         <height>16</height>
+         <width>651</width>
+         <height>20</height>
         </rect>
        </property>
        <property name="text">
@@ -277,7 +280,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
         <x>10</x>
         <y>10</y>
         <width>781</width>
-        <height>71</height>
+        <height>41</height>
        </rect>
       </property>
       <property name="frameShape">
@@ -297,7 +300,7 @@ hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: &quot;\2610&quot;; }
 li.checked::marker { content: &quot;\2612&quot;; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Segoe UI'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:10pt; font-weight:700; font-style:italic;&quot;&gt;Paso 2&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:700; font-style:italic;&quot;&gt;Paso 2&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Seleccionar el stream de audio que se desea extraer&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
      </widget>
@@ -311,39 +314,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
        </rect>
       </property>
       <property name="styleSheet">
-       <string notr="true">QPushButton{
-    font-family: &quot;Segoe UI&quot;;
-    font-size: 8pt;
-    border: 1px solid;
-    border-color: rgb(46, 103, 156); 
-    border-radius: 3px; 
-    padding-right: 10px; 
-    padding-left: 10px;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    background-color: rgb(77, 138, 201);
-    color: white;
-    font: bold;
-    width: 64px;
-}
-QPushButton:hover {
-    border: 1px solid;
-    border-radius: 3px;
-    border-color: rgb(33, 77, 115);
-}
-QPushButton:focus {
-    outline-color: transparent;
-    border: 2px solid;
-    border-color: rgb(151, 195, 243);
-}
-QPushButton:pressed{
-    background-color: rgb(52, 113, 173);
-}
-QPushButton:disabled {
-    color: grey;
-    border-color: grey;
-    background-color: none;
-}</string>
+       <string notr="true"/>
       </property>
       <property name="title">
        <string>Streams de audio</string>
@@ -392,12 +363,25 @@ QPushButton:disabled {
        <string>Atras</string>
       </property>
      </widget>
+     <widget class="Line" name="line_3">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>50</y>
+        <width>791</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="ventana_convertir">
      <widget class="QPushButton" name="button_convertir">
       <property name="geometry">
        <rect>
-        <x>720</x>
+        <x>730</x>
         <y>240</y>
         <width>75</width>
         <height>24</height>
@@ -414,7 +398,7 @@ QPushButton:disabled {
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>60</y>
+        <y>70</y>
         <width>791</width>
         <height>161</height>
        </rect>
@@ -428,7 +412,7 @@ QPushButton:disabled {
          <x>390</x>
          <y>60</y>
          <width>121</width>
-         <height>24</height>
+         <height>31</height>
         </rect>
        </property>
        <property name="text">
@@ -444,8 +428,11 @@ QPushButton:disabled {
          <x>10</x>
          <y>60</y>
          <width>371</width>
-         <height>22</height>
+         <height>31</height>
         </rect>
+       </property>
+       <property name="readOnly">
+        <bool>true</bool>
        </property>
       </widget>
       <widget class="QLabel" name="labelNombreCarpeta">
@@ -501,7 +488,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
      <widget class="QPushButton" name="but_back_to_paso_2">
       <property name="geometry">
        <rect>
-        <x>620</x>
+        <x>640</x>
         <y>240</y>
         <width>75</width>
         <height>24</height>
@@ -514,6 +501,19 @@ li.checked::marker { content: &quot;\2612&quot;; }
        <bool>false</bool>
       </property>
      </widget>
+     <widget class="Line" name="line_2">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>50</y>
+        <width>791</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
     </widget>
    </widget>
   </widget>
@@ -522,7 +522,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>851</width>
+     <width>861</width>
      <height>22</height>
     </rect>
    </property>

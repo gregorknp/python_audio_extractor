@@ -61,8 +61,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.but_back_to_paso_1.clicked.connect(self.go_back_to_paso_1)
         self.line_edit_carpeta.textChanged.connect(partial(self.check_if_text, self.button_convertir))
 
-        # Se ajusta el alto de la ventana al contenido para que no haya demasiado espacio vacío en la parte baja
-        self.setGeometry(20, 20, 831, 300)
+        # Se ajustan las dimensiones de la ventana principal y se evita que se pueda redimensionar
+        self.setFixedSize(860, 250)
 
         # Stream de audio que se convertira
         self.stream_seleccionado = None
@@ -87,6 +87,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # Se establece la ventana principal como el widget principal
         self.stackedWidget.setCurrentWidget(self.mainWindow)
 
+        # Se aumenta el alto de la ventana para poder ver todos los componentes
+        self.setFixedSize(860, 250)
+
     def go_back_to_paso_2(self):
         """
         Rutina que se ejecuta cuando se pincha el boton "Atras" de la ventana del paso 3.
@@ -98,6 +101,7 @@ class MainWindow(QtWidgets.QMainWindow):
         logging.info("Volvemos a la ventana de seleccion del stream de audio")
         self.limpia_ventana_3()
         self.stackedWidget.setCurrentWidget(self.ventana_streams)
+        self.setFixedSize(860, 620)
 
     def go_to_paso2(self):
         """
@@ -117,7 +121,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.stackedWidget.setCurrentWidget(self.ventana_streams)
 
             # Se aumenta el alto de la ventana para poder ver todos los componentes
-            self.setGeometry(20, 20, 831, 671)
+            self.setFixedSize(860, 620)
 
             self.get_info_file()
         else:
@@ -209,14 +213,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self.stream_seleccionado = stream
 
         # Se obtiene la informacion del stream seleccionado para mostrarse en pantalla
-        atributos = []
-        atributos.append(stream.get('tags').get("language"))
-        atributos.append(stream.get("codec_name"))
-        atributos.append(stream.get("codec_long_name"))
-        atributos.append(str(stream.get("channels")))
-        atributos.append(stream.get("channel_layout"))
-        atributos.append(str(stream.get("NUMBER_OF_FRAMES")))
-        atributos.append(str(stream.get("tags").get("NUMBER_OF_BYTES")))
+        atributos = [stream.get('tags').get("language"),
+                     stream.get("codec_name"),
+                     stream.get("codec_long_name"),
+                     str(stream.get("channels")),
+                     stream.get("channel_layout"),
+                     str(stream.get("NUMBER_OF_FRAMES")),
+                     str(stream.get("tags").get("NUMBER_OF_BYTES"))]
 
         # Se itera sobre las etiquetas del QVBoxLayout y se establece el texto con el correspondiente atributo
         for index in range(self.valores.count()):
@@ -229,6 +232,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def go_to_paso3(self):
         logging.info("Vamos a la ventana de extraccion del audio")
         self.stackedWidget.setCurrentWidget(self.ventana_convertir)
+        self.setFixedSize(860, 320)
 
     def check_file_exists(self):
         """
@@ -295,9 +299,6 @@ class MainWindow(QtWidgets.QMainWindow):
             logging.info(f"Se seleccionado {str(out_filename[0])} como fichero de salida")
             self.line_edit_carpeta.setText(str(out_filename[0]))
 
-            # Se habilita el boton 'Convertir'
-            self.button_convertir.setEnabled(True)
-
         except Exception as e:
             error_logger = logging.getLogger("error_logger")
             error_logger.critical(f"Se ha producido el error: {e}", stack_info=True)
@@ -336,7 +337,7 @@ class MainWindow(QtWidgets.QMainWindow):
         audio esta en ejecucion
         :return: None
         """
-        self.ventana_espera = VentanaWait()
+        self.ventana_espera = VentanaWait(self.configuracion)
         self.ventana_espera.show()
 
     def mata_gif(self):
@@ -352,7 +353,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # Se un mensaje indicando que el proceso ha terminado
         msg = QtWidgets.QMessageBox()
         msg.setWindowTitle("Info")
-        msg.setText(f"El audio ha sido extraido en {self.line_edit_carpeta.text()}")
+        msg.setText(f"{self.configuracion.lang_dict[self.configuracion.config_dict['idioma']]['success_end_process']} "
+                    f"{self.line_edit_carpeta.text()}")
         msg.setDefaultButton(QtWidgets.QMessageBox.Ok)
         msg.exec_()
 
@@ -432,6 +434,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.search_button.setText(dict_idioma['search_button'])
         self.but_go_to_paso2.setText(dict_idioma['but_go_to_paso2'])
 
+        self.info_paso_1.setHtml(f"<body style=' font-family:'Segoe UI'; font-size:9pt; font-weight:400; "
+                                 f"font-style:normal;>"
+                                 f"<p style='margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; "
+                                 f"-qt-block-indent:0; text-indent:0px;'><span style=' font-weight:700; "
+                                 f"font-style:italic;'>{dict_idioma['info_paso_1.step']}</span></p>"
+                                 f"<p style=' margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; "
+                                 f"-qt-block-indent:0; text-indent:0px;'>{dict_idioma['info_paso_1.desc']}</p>"
+                                 f"</body>")
+
         # Textos de la ventana de seleccion de stream
         self.info_video_box.setTitle(dict_idioma['info_video_box.title'])
         self.labelNombre.setText(dict_idioma['info_video_box.labelNombre'])
@@ -444,12 +455,30 @@ class MainWindow(QtWidgets.QMainWindow):
         self.but_back_to_paso_1.setText(dict_idioma['but_back_to_paso_1'])
         self.but_go_to_paso_3.setText(dict_idioma['but_go_to_paso_3'])
 
+        self.info_paso_2.setHtml(f"<body style=' font-family:'Segoe UI'; font-size:9pt; font-weight:400; "
+                                 f"font-style:normal;>"
+                                 f"<p style='margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; "
+                                 f"-qt-block-indent:0; text-indent:0px;'><span style=' font-weight:700; "
+                                 f"font-style:italic;'>{dict_idioma['info_paso_2.step']}</span></p>"
+                                 f"<p style=' margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; "
+                                 f"-qt-block-indent:0; text-indent:0px;'>{dict_idioma['info_paso_2.desc']}</p>"
+                                 f"</body>")
+
         # Textos de la ventana de seleccion de fichero de salida
         self.groupBox_2.setTitle(dict_idioma['groupBox_2.title'])
         self.but_back_to_paso_2.setText(dict_idioma['but_back_to_paso_2'])
         self.button_convertir.setText(dict_idioma['button_convertir'])
         self.button_sel_carpeta.setText(dict_idioma['button_sel_carpeta'])
         self.labelNombreCarpeta.setText(dict_idioma['labelNombreCarpeta'])
+        self.info_paso_3.setHtml(f"<body style=' font-family:'Segoe UI'; font-size:9pt; font-weight:400; "
+                                 f"font-style:normal;>"
+                                 f"<p style='margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; "
+                                 f"-qt-block-indent:0; text-indent:0px;'><span style=' font-weight:700; "
+                                 f"font-style:italic;'>{dict_idioma['info_paso_3.step']}</span></p>"
+                                 f"<p style=' margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; "
+                                 f"-qt-block-indent:0; text-indent:0px;'>{dict_idioma['info_paso_3.desc']}</p>"
+                                 f"</body>")
+
 
     def closeEvent(self, event):
         logging.info("Finaliza la aplicacion")

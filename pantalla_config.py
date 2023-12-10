@@ -35,6 +35,9 @@ class PantallaConfig(QtWidgets.QDialog):
             self.label.setText("Es necesario establecer un path")
             # TODO poner el texto en rojo y negrita
 
+        # Esto fija el tamaño de la ventana y evita que se redimensione
+        self.setFixedSize(430, 444)
+
         # Se establece el texto de los elementos graficos en funcion del idioma
         self.cambio_textos(self.configuracion.config_dict['idioma'])
         logging.info("Creacion de pantalla de configuracion")

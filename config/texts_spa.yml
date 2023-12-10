@@ -3,6 +3,8 @@ mainwindow.title: Extractor de audio
 label_sel_fich_video: Seleccionar fichero de video
 search_button: Buscar archivo
 but_go_to_paso2: Siguiente
+info_paso_1.step: Paso 1
+info_paso_1.desc: Seleccionar el archivo de video del cual obtener el audio
 
 # Textos de la ventana de seleccion de stream
 info_video_box.title: Informacion video
@@ -28,12 +30,19 @@ info_stream_box.labels:
 but_back_to_paso_1: Atras
 but_go_to_paso_3: Siguiente
 
+info_paso_2.step: Paso 2
+info_paso_2.desc: Seleccionar el stream de audio que se desea extraer de la lista Streams de audio
+
 # Textos de la ventana de conversion
 but_back_to_paso_2: Atras
 button_convertir: Convertir
 button_sel_carpeta: Seleccionar archivo
 labelNombreCarpeta: Seleccionar fichero de salida
 groupBox_2.title: ""
+success_end_process: "El audio ha sido extraido en:"
+
+info_paso_3.step: Paso 3
+info_paso_3.desc: Seleccionar ruta completa del fichero de audio a obtener
 
 # Textos de la ventana de configuracion
 window_title: Configuracion
@@ -43,3 +52,7 @@ cambiar_path_button: Cambiar
 lbl_sel_lang: Seleccion idioma
 acept_config_button: Aceptar
 cancel_config_button: Cancelar
+
+# Waiting window texts
+wait.title: "Por favor, espere..."
+wait.label: "Extrayendo audio\nEl proceso puede llevar unos minutos\nPor favor, espere"

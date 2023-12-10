@@ -1,12 +1,12 @@
-idioma: Castellano
+idioma: English
 logging:
   formatters:
     debug_formatter:
+      datefmt: '%Y-%m-%d %H:%M:%S'
       format: '[%(asctime)s][%(levelname)s][%(name)s][%(module)s|%(lineno)s]. %(message)s'
-      datefmt: "%Y-%m-%d %H:%M:%S"
     default_formatter:
+      datefmt: '%Y-%m-%d %H:%M:%S'
       format: '[%(asctime)s].%(levelname)s. %(message)s'
-      datefmt: "%Y-%m-%d %H:%M:%S"
   handlers:
     console_handler:
       class: logging.StreamHandler
@@ -25,17 +25,17 @@ logging:
       formatter: default_formatter
       level: INFO
   loggers:
+    error_logger:
+      handlers:
+      - error_handler
+      - console_handler
+      level: CRITICAL
     root:
       handlers:
       - file_handler
       - console_handler
       level: INFO
-    error_logger:
-      handlers:
-        - error_handler
-        - console_handler
-      level: CRITICAL
   version: 1
 path_ffmpeg: D:/Formacion/ffmpeg-6.1-essentials_build/bin
-path_sw: C:\Users\Goyo\audio_extractor
-path_sw_out: C:\Users\Goyo\audio_extractor\out
+path_sw: null
+path_sw_out: null
