@@ -232,6 +232,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def go_to_paso3(self):
         logging.info("Vamos a la ventana de extraccion del audio")
         self.stackedWidget.setCurrentWidget(self.ventana_convertir)
+
+        # Se establece por defecto el nombre del fichero de entrada cambiando la extension por .mp4
+        self.line_edit_carpeta.setText(f"{os.path.splitext(self.lineEdit.text())[0]}.mp4")
+
         self.setFixedSize(860, 320)
 
     def check_file_exists(self):
@@ -293,7 +297,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         try:
             out_filename = QtWidgets.QFileDialog.getSaveFileName(self, ("Especificar archivo de salida"),
-                                                    "./audio.mp4",
+                                                    # "./audio.mp4",
+                                                    os.path.splitext(self.lineEdit.text())[0],
                                                     ("Audio (*.mp4)"))
 
             logging.info(f"Se seleccionado {str(out_filename[0])} como fichero de salida")
