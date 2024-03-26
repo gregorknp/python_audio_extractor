@@ -81,7 +81,8 @@ class PantallaConfig(QtWidgets.QDialog):
         :return:
         """
         try:
-            fname = QtWidgets.QFileDialog.getExistingDirectory(self, 'Seleccionar archivo de video', "")
+            caption = self.configuracion.lang_dict[self.configuracion.config_dict["idioma"]]["select_ffmpeg_path_capt"]
+            fname = QtWidgets.QFileDialog.getExistingDirectory(self, caption, "")
 
             # Se pone la ruta del archivo en el cuadro de texto
             if fname:
