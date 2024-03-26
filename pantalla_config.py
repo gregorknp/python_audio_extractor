@@ -84,7 +84,9 @@ class PantallaConfig(QtWidgets.QDialog):
             fname = QtWidgets.QFileDialog.getExistingDirectory(self, 'Seleccionar archivo de video', "")
 
             # Se pone la ruta del archivo en el cuadro de texto
-            self.label.setText(str(fname))
+            if fname:
+                self.label.setText(str(fname))
+
             logging.info(f"Se selecciona ruta para binarios ffmpeg: {str(fname)}")
         except Exception as e:
             error_logger = logging.getLogger("error_logger")
