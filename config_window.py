@@ -5,29 +5,51 @@ from config import Config
 # TODO AL inicio las rutas a archivos tienen que estar vacias y que sea el usuario quien las rellene para que las rutas
 # tengan formato windows o linux
 # TODO La primera vez que se configure el programa, se tiene que indicar que hay que configurar las rutas
+# TODO Añadir esta info en el manual de usuario
 
 import logging
 
 
-class PantallaConfig(QtWidgets.QDialog):
+class ConfigWindow(QtWidgets.QDialog):
+    """
+    Attributes:
+    -----------
+    configuracion: Config
+        Object to manage configuration
 
+    cambio_idioma_signal: pyqtSignal
+        Signal emitted when changes in configuration are saved
+
+
+    Class methods:
+    --------------
+    save_changes:
+
+
+    """
+
+    # Signal to emit when
     cambio_idioma_signal = QtCore.pyqtSignal()
 
     def __init__(self, configuracion: Config):
-        super(PantallaConfig, self).__init__()
-        uic.loadUi('pantalla_config.ui', self)  # Se carga el fichero .ui que contiene los elementos graficos
+        """
+        Constructor method. It initializes class elements and connects class methods as event handlers of interface
+        elements.
+
+        :param configuracion:
+
+        :returns None
+        """
+        super(ConfigWindow, self).__init__()
+        uic.loadUi('pantalla_config.ui', self)  # Loads the .ui file that contains the user interface
 
         self.configuracion = configuracion
 
-        # Se establecen los disparadores de eventos para los componentes
-        self.cambiar_path_button.clicked.connect(self.cambiar_path)
-
-        # Manejadores de los botones
-        self.acept_config_button.clicked.connect(self.guardar_cambios)
-        self.cancel_config_button.clicked.connect(self.cancelar_cambios)
-
-        # Se mapea el evento de cambio de elemento seleccionado en el combo box
-        self.combobox_lang.currentIndexChanged.connect(self.cambio_idioma)
+        # Connect class methods to graphical element events
+        self.cambiar_path_button.clicked.connect(self.change_ffmpeg_path)
+        self.acept_config_button.clicked.connect(self.save_changes)
+        self.cancel_config_button.clicked.connect(self.cancel_changes)
+        self.combobox_lang.currentIndexChanged.connect(self.change_language)
 
         # Se visualiza la configuracion del fichero
         self.label.setText(configuracion.config_dict["path_ffmpeg"])
@@ -35,17 +57,20 @@ class PantallaConfig(QtWidgets.QDialog):
             self.label.setText("Es necesario establecer un path")
             # TODO poner el texto en rojo y negrita
 
-        # Esto fija el tamaño de la ventana y evita que se redimensione
+        # Adapt window size and prevent it from resizing
         self.setFixedSize(430, 444)
 
-        # Se establece el texto de los elementos graficos en funcion del idioma
-        self.cambio_textos(self.configuracion.config_dict['idioma'])
-        logging.info("Creacion de pantalla de configuracion")
+        # Translates all texts into the selected language
+        self.change_texts(self.configuracion.config_dict['idioma'])
+        logging.info("Configuration window creation")
 
-    def guardar_cambios(self):
+    def save_changes(self):
         """
-        Metodo que se ejcuta cuando se pincha en el boton "Aceptar"
-        Se recoge la informacion de los campos y se guardan en el fichero de configuracion
+        Class method executed when the user clicks on "Acept" button to save changes in configuration.
+
+        It updates both configuration file and dictionary with the changes the user made.
+        Notifies the main thread that there has been a change.
+
         :return: None
         """
         self.configuracion.config_dict['path_ffmpeg'] = self.label.text()
@@ -53,32 +78,34 @@ class PantallaConfig(QtWidgets.QDialog):
 
         self.cambio_idioma_signal.emit()
 
-        # Se abre el fichero para escritura y se vuelca el contenido de self.configuracion
+        # Save configuration dictionary to file
         with open(self.configuracion.config_file, 'w') as outfile:
             yaml.dump(self.configuracion.config_dict, outfile, default_flow_style=False)
 
-        logging.info("Se ha modificado la configuracion")
-        # Se cierre la ventana
+        logging.info("There have been some changes in configuration")
+
         self.close()
 
-    def cancelar_cambios(self):
+    def cancel_changes(self):
         """
-        Metodo que se ejecuta cuando se pincha en el boton "Cancelar"
+        Class method executed when the user clicks on "Cancel" button.
 
-        No se tienen en cuenta los cambios en la configuracion y se cierra la ventana
-        :return:
+        Closes configuration window without making any changes in configuration.
+
+        :return: None
         """
 
-        # Se cierra la ventana sin hacer ningun cambio
-        logging.info("Se sale de la ventana de configuracion sin realizar ningun cambio")
+        logging.info("Leaving configuration window without making any changes")
         self.close()
 
-    def cambiar_path(self):
+    def change_ffmpeg_path(self):
         """
-        Metodo que se ejecuta cuando se pincha en el boton de busqueda de fichero
+        Class method executed when the user clicks on the button to look for ffmepg executable file
 
-        Muestra un dialogo para seleccionar el fichero de video.
-        :return:
+        Shows a QFileDialog to select the ffmpeg executable file. If the path is not empty, shows the full path in a
+        label.
+
+        :return: None
         """
         try:
             caption = self.configuracion.lang_dict[self.configuracion.config_dict["idioma"]]["select_ffmpeg_path_capt"]
@@ -87,28 +114,31 @@ class PantallaConfig(QtWidgets.QDialog):
             # Se pone la ruta del archivo en el cuadro de texto
             if fname:
                 self.label.setText(str(fname))
-
-            logging.info(f"Se selecciona ruta para binarios ffmpeg: {str(fname)}")
+                logging.info(f"ffmpeg full path selected: {str(fname)}")
         except Exception as e:
             error_logger = logging.getLogger("error_logger")
-            error_logger.critical(f"Se produce error: {e}", stack_info=True)
+            error_logger.critical(f"An error has occurred: {e}", stack_info=True)
 
-    def cambio_idioma(self):
+    def change_language(self):
         """
-        Metodo que se ejecuta cuando se cambia el idioma en el combo box de seleccion de idiomas
+        Class method executed when a is selected in the combobox.
 
-        Modifica los textos de la ventana de configuracion en caliente
-        :return:
+        Sets the current language and translates texts on the fly.
+
+        :return: None
         """
 
         idioma_actual = str(self.combobox_lang.currentText())
-        logging.info(f"Se selecciona idioma: {idioma_actual}")
-        self.cambio_textos(idioma_actual)
+        logging.info(f"Language selected: {idioma_actual}")
+        self.change_texts(idioma_actual)
 
-    def cambio_textos(self, idioma):
+    def change_texts(self, idioma):
         """
-        Metodo que cambia los textos
-        :return:
+        Class method executed when a language is selected in the combobox
+
+        Changes the texts on the configuration window using the current language dictionary
+
+        :return: None
         """
         self.lbl_sel_lang.setText(self.configuracion.lang_dict[idioma]['lbl_sel_lang'])
         self.cambiar_path_button.setText(self.configuracion.lang_dict[idioma]['cambiar_path_button'])
@@ -118,7 +148,14 @@ class PantallaConfig(QtWidgets.QDialog):
         self.acept_config_button.setText(self.configuracion.lang_dict[idioma]['acept_config_button'])
         self.cancel_config_button.setText(self.configuracion.lang_dict[idioma]['cancel_config_button'])
 
-        logging.info(f"Se modifican los textos de la ventana.")
+        logging.info(f"Configuration window texts changed")
 
     def closeEvent(self, event):
-        self.cancelar_cambios()
+        """
+        Class method executed when the window is closed.
+
+        :param event:
+
+        :return: None
+        """
+        self.cancel_changes()
