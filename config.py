@@ -1,50 +1,73 @@
 import yaml
 import logging
 
+
 class Config:
     """
-    Clase que encapsula la configuracion de la aplicacion
+    Class that contains all the logic related to the application's configuration
+
+    Attributes:
+    ----------
+    config_file: String
+        Configuration file path relative to working directory
+
+    config_dict: dict
+        Dictionary that represents the information in the configuration file
+
+    lang_dict: dict
+        Dictionary which contains
+
+    Methods:
+    --------
+    __init__: Cosntructor
+    load_config_file: Loads configuration into memory
+    check_config_params: Checks integrity of configuration params
+    load_lang_files: Loads language files into memory
     """
 
     def __init__(self, config_file):
         """
-        Constructor de la clase
+        Class constructor.
+
+        Initializes class variables, loads configuration from configuration file and loads translation texts
         :return:
         """
-        # Inicializacion de atributos de clase
         self.config_file = config_file
         self.config_dict = None
         self.lang_dict = {}
 
-        self.cargar_config()
-        self.carga_fichero_idiomas()
+        self.load_config_file()
+        self.load_lang_files()
 
-    def cargar_config(self):
+    def load_config_file(self):
         """
-        Abre y carga en memoria la informacion del fichero de configuracion
-        :return:
+        Class method to load the configuration file and dump it into a dictionary
+
+        :return: None
         """
 
         with open(self.config_file) as file:
             self.config_dict = yaml.safe_load(file)
 
-            logging.debug(f"Configuracion leida de fichero")
+            logging.debug(f"Configuration loaded")
             logging.debug(self.config_dict)
 
-    def check_config(self):
+    def check_config_params(self):
         """
-        Verifica si tenemos que visualizar algun aviso por la configuracion, por ejemplo, si el path a los archivos
-        ffmpeg no está configurado
-        :return:
+        Class method to check if there is any configuration parameter without being assigned
+
+        :return: None
         """
         for key, value in self.config_dict.items():
             if not value:
-                print(f"Aviso. El campo {key} no esta asignado. Se aplicara valor por defecto")
+                print(f"Warning. The parameter {key} is not assigned. Default value will be used")
 
-    def carga_fichero_idiomas(self):
+    def load_lang_files(self):
         """
-        Metodo que abre los ficheros de idiomas y los carga en diccionarios
-        :return:
+        Class method to open the files which contain text translation in spanish and english and dump their content
+        into dictionary variables
+
+        :return: None
         """
         with open('config/texts_spa.yml') as file:
             self.lang_dict['Castellano'] = yaml.safe_load(file)
