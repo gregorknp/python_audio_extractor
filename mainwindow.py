@@ -1,6 +1,6 @@
 from PyQt5 import QtCore, QtWidgets, uic
 from PyQt5.QtWidgets import QPushButton
-from pantalla_config import PantallaConfig
+from config_window import ConfigWindow
 from functools import partial
 from ventana_wait import VentanaWait
 from config import Config
@@ -13,35 +13,56 @@ import time
 
 
 class MainWindow(QtWidgets.QMainWindow):
+    """
+    Class that encapsules the app main window logic.
+
+    The main window basically consists of a stacker widget containing three windows:
+    1. Main window. Allows us to select the video file we want to extract the audio from.
+    2. Stream selection window. Shows all audio streams available to extract.
+    3. Output file selection window. Allows us to select the name of the final audio file.
+    """
     def __init__(self):
+        """
+        Class constructor
+
+        It performs the following actions:
+        1. Loads the mainwindow.ui file. This file was created using QTCreator and contains all graphical elements of the main window.
+        2. Create connections between events in ui objects and the appropriate handler
+        3. Initialize variables such as the window size, window title, set initial widget...
+        4. Loads configuation file
+        """
         super(MainWindow, self).__init__()
-        uic.loadUi('mainwindow.ui', self)   # Se carga el fichero .ui que contiene los elementos graficos
+        uic.loadUi('mainwindow.ui', self)   # Graphical elements of the main window are loaded
 
-        self.setWindowTitle("Extractor de audio")  # Se establece el titulo de la ventana
+        self.setWindowTitle("Extractor de audio")
 
-        # Se establecen los disparadores de eventos para los componentes
+        # Connection between object's events and handler
         self.lineEdit.textChanged.connect(partial(self.check_if_text, self.but_go_to_paso2))
         self.search_button.clicked.connect(self.search_video_file)
         self.but_go_to_paso2.clicked.connect(self.go_to_paso2)
         self.configButton.clicked.connect(self.show_config)  # TODO
 
+        self.but_go_to_paso_3.clicked.connect(self.go_to_paso3)
+
+        self.button_convertir.setEnabled(False)
+        self.button_convertir.clicked.connect(self.convertir)
+        self.button_sel_carpeta.clicked.connect(self.seleccionar_fichero_salida)
+        self.but_back_to_paso_2.clicked.connect(self.go_back_to_paso_2)
+        self.but_back_to_paso_1.clicked.connect(self.go_back_to_paso_1)
+        self.line_edit_carpeta.textChanged.connect(partial(self.check_if_text, self.button_convertir))
+
         self.stackedWidget.setCurrentWidget(self.mainWindow)
 
-        # Carga y verificacion de configuracion
+        # Configuration load
         self.configuracion = Config('config/config.yml')
-#        self.check_config()
 
-        # Se instancia la ventana de configuracion
-        self.pantalla_configuracion = PantallaConfig(self.configuracion)
+        # Creates the configuration dialog and creates a connection when the language changes to automatically
+        # translate texts
+        self.pantalla_configuracion = ConfigWindow(self.configuracion)
         self.pantalla_configuracion.cambio_idioma_signal.connect(self.traducir_textos)
 
-        # Se configura el sistema de logs
+        # Logging manager configuration using config.yml file
         logging.config.dictConfig(self.configuracion.config_dict['logging'])
-
-        """
-        Se inicializan los componentes de la ventana ventana_streams
-        """
-        self.but_go_to_paso_3.clicked.connect(self.go_to_paso3)
 
         # Se crean las etiquetas del panel de informacion del stream
         # Se visualiza la informacion del stream en la seccion.
@@ -51,86 +72,74 @@ class MainWindow(QtWidgets.QMainWindow):
             self.campos.addWidget(QtWidgets.QLabel(campo))
             self.valores.addWidget(QtWidgets.QLabel(""))  # Etiqueta vacia
 
-        """
-        Se inicializan los componentes de la ventana ventana_convertir
-        """
-        self.button_convertir.setEnabled(False)
-        self.button_convertir.clicked.connect(self.convertir)
-        self.button_sel_carpeta.clicked.connect(self.seleccionar_fichero_salida)
-        self.but_back_to_paso_2.clicked.connect(self.go_back_to_paso_2)
-        self.but_back_to_paso_1.clicked.connect(self.go_back_to_paso_1)
-        self.line_edit_carpeta.textChanged.connect(partial(self.check_if_text, self.button_convertir))
+        self.setFixedSize(860, 250)  # We set the size of the window and prevent it from resizing
 
-        # Se ajustan las dimensiones de la ventana principal y se evita que se pueda redimensionar
-        self.setFixedSize(860, 250)
-
-        # Stream de audio que se convertira
         self.stream_seleccionado = None
+        self.ventana_espera = None
 
-        self.traducir_textos()
-        logging.info("Inicio de la aplicacion")
-        logging.debug("Inicio de la aplicacion")
-        self.show()  # Muestra la ventana
+        self.traducir_textos()  # Texts are translated according to current language
+        logging.info("Application starts")
+        logging.debug("Application starts")
+        self.show()
 
     def go_back_to_paso_1(self):
         """
-        Metodo que pone el foco en la ventana principal, independientemente de cual es la ventana actual
+        Method that takes the user back to step 1 regardless which is the current window.
 
-        Resetea elementos graficos y variables y se establece como widget actual la ventana principal
+        It resets some graphical elements and sets the main window as current widget
 
         :return: None
         """
-        logging.info("Se vuelve a la ventana principal")
+        logging.info("Going back to main window")
         self.limpia_ventana_2()
         self.limpia_ventana_1()
 
-        # Se establece la ventana principal como el widget principal
         self.stackedWidget.setCurrentWidget(self.mainWindow)
 
-        # Se aumenta el alto de la ventana para poder ver todos los componentes
+        # Fixing window size
         self.setFixedSize(860, 250)
 
     def go_back_to_paso_2(self):
         """
-        Rutina que se ejecuta cuando se pincha el boton "Atras" de la ventana del paso 3.
+        Method invoked when cliking the "Back" button in step 3 window
 
-        Limpia los campos de la ventana del paso 3 y establece el foco en la ventana de seleccion de stream
+        Clears graphical elements of step 3 window and set focus on stream selection window (step 2)
 
-        :return:
+        :return: None
         """
-        logging.info("Volvemos a la ventana de seleccion del stream de audio")
+        logging.info("Coing back to stream selection window")
         self.limpia_ventana_3()
         self.stackedWidget.setCurrentWidget(self.ventana_streams)
         self.setFixedSize(860, 620)
 
     def go_to_paso2(self):
         """
-        Rutina que realiza la transicion desde la ventana principal a la ventana que muestra la informacion del
-        video y sus streams
+        Method that makes the transition from the main window (step 1) to the stream selection window (step 2).
 
-        Verifica que el nmobre del archivo en el campo de texto existe.
+        If the source video file exists:
+         The stream selection window is set as current widget
+         We get information about the source video file to be shown in the window
+         Window size is fised
+        else:
+         An error message if displayed
 
-        Establece como ventana actual la segunda ventana, obtiene la informacion del archivo de video, muestra la
-        informacion y crea los botones que representan las pistas del archivo
+        Important information is logged.
 
-        :return:
+        :return: None
         """
 
         if self.check_file_exists():
-            logging.info("Vamos a la ventana de seleccion del audio a extraer")
+            logging.info("Go to stream selection window")
             self.stackedWidget.setCurrentWidget(self.ventana_streams)
-
-            # Se aumenta el alto de la ventana para poder ver todos los componentes
             self.setFixedSize(860, 620)
-
             self.get_info_file()
         else:
-            logging.error(f"El archivo seleccionado: {self.lineEdit.text()} no existe")
+            logging.error(f"The selected file: {self.lineEdit.text()} does not exist")
 
-            # Se crea un QMessageBox para mostrar el error al usuario
+            # Error message shown in a QMessageBox to give feedback to the user
             msg = QtWidgets.QMessageBox()
-            msg.setText(f"El archivo seleccionado: {self.lineEdit.text()} no existe\n"
-                        f"Por favor, seleccione un archivo existente")
+            msg.setText(f"The selected file: {self.lineEdit.text()} does not exist\n"
+                        f"Please select an existing file")
             msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
             msg.setIcon(QtWidgets.QMessageBox.Critical)
             msg.setWindowTitle("Error")
@@ -138,12 +147,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def get_info_file(self):
         """
-        Metodo que obtiene la informacion del archivo de video y rellena los elementos graficos de la ventana
-        :return:
-        """
+        Method that gets some information from the video file that will be rendered in the window
 
+        Information from both audio and video streams are displayed in the window, allowing the user to select the
+        audio stream to extract using the corresponding button. When the button is clicked, the audio stream information
+        is displayed.
+
+        :return: None
+        """
         try:
-            # Se forma el comando para obtener la informacion del video
+            # Command along with parameters to get the informacion of the video file
             path_ffprobe = os.path.join(self.configuracion.config_dict['path_ffmpeg'], "ffprobe.exe")
             comando = [path_ffprobe,
                        str(self.lineEdit.text()),
@@ -153,17 +166,18 @@ class MainWindow(QtWidgets.QMainWindow):
 
             logging.debug(f"Comando: {comando}")
 
-            # Se ejecuta el comando
+            # Command execution
             list_files = subprocess.run(comando, capture_output=True, text=True)
             logging.debug(f"Info devuelta por el comando: {list_files.stdout}")
             dict_info_peli = eval(list_files.stdout)
 
-            # Despues, muestro la informacion de los streams disponibles
+            # We iterate over the streams of the file. for each stream...
             for stream in dict_info_peli["streams"]:
 
                 logging.debug(f"id: {stream['index']} tipo: {stream['codec_type']}")
 
-                # Si es un audio, creo un boton con la informacion y lo añado a la lista de streams.
+                # ... if it is an audio stream, we create a button labeled with the stream info, connect the button
+                # with the method handler and add the button to the leayout
                 lang_dict = self.configuracion.lang_dict[self.configuracion.config_dict['idioma']]
                 if stream['codec_type'] == "audio":
                     stream_info = f"Stream: {stream['index']} {lang_dict['streamsBox.streams_layout.but.type']}: {stream['codec_type']}\n" \
@@ -171,11 +185,11 @@ class MainWindow(QtWidgets.QMainWindow):
                     button = QPushButton(stream_info, self)
                     button.setObjectName(f"but_stream_{stream['index']}")
 
-                    # Utilizo partial para poder pasar el index del stream como parametro
+                    # "partial" is used to pass the stream as an argument to the hanlder
                     button.clicked.connect(partial(self.select_stream,
                                                    stream))
                     self.streams_layout.addWidget(button)
-                # Si el stream es de video, recojo la informacion y la coloco en su seccion
+                # ... if it is a video stream, some information is extracted and rendered
                 elif stream['codec_type'] == "video":
                     nombre_video = stream.get('tags').get('title') if 'tags' in stream else self.lineEdit.text()
                     self.labelNombreStr.setText(nombre_video)
@@ -189,7 +203,7 @@ class MainWindow(QtWidgets.QMainWindow):
             else:
                 mensaje = e
 
-            # Se muestra un mensaje incidando el error
+            # A QMessageBox is shown to give feedback to the user
             msg = QtWidgets.QMessageBox()
             msg.setWindowTitle("Error")
             msg.setText(mensaje)
@@ -201,18 +215,23 @@ class MainWindow(QtWidgets.QMainWindow):
             error_logger = logging.getLogger("error_logger")
             error_logger.critical(f"Se ha producido el siguiente error: {e}")
 
-            # Volvemos a la ventana anterior
+            # Go back to main window
             self.go_back_to_paso_1()
 
     def select_stream(self, stream):
         """
-        Metodo que se ejecuta cuando se pincha sobre uno de los botones que representa un stream
-        :return:
+        Handler method triggered when the user clicks on an audio stream button
+
+        We extract some fields from the stream such as the stream languaje or the codes name and visualize these fields
+        in the form of labels in an specific panel of the window
+
+        :param stream: Audio stream information associated with the button just clicked in dictionary format
+        :return: None
         """
         logging.info(f"Se ha seleccionado el stream #{stream['index']}")
-        self.stream_seleccionado = stream
+        self.stream_seleccionado = stream  # Class variable set as we will need the stream in the future
 
-        # Se obtiene la informacion del stream seleccionado para mostrarse en pantalla
+        # List created with information extracted from the audio stream.
         atributos = [stream.get('tags').get("language"),
                      stream.get("codec_name"),
                      stream.get("codec_long_name"),
@@ -221,43 +240,55 @@ class MainWindow(QtWidgets.QMainWindow):
                      str(stream.get("NUMBER_OF_FRAMES")),
                      str(stream.get("tags").get("NUMBER_OF_BYTES"))]
 
-        # Se itera sobre las etiquetas del QVBoxLayout y se establece el texto con el correspondiente atributo
+        # We iterate over the labels of the QVBoxLayout and set its text using the information extracted from the audio
+        # stream
         for index in range(self.valores.count()):
             label = self.valores.itemAt(index).widget()
             label.setText(atributos[index])
 
-        # Se habilita el boton de siguiente
+        # The button to go to the next window is enabled
         self.but_go_to_paso_3.setEnabled(True)
 
     def go_to_paso3(self):
-        logging.info("Vamos a la ventana de extraccion del audio")
+        """
+        Handler method triggered when the user clicks on the button "but_go_to_paso_3"
+
+        The transition to step 3 window is logged in the log file, the step 3 window is set as the current window and
+        the line edit field is filled with the full path of the source file changing the file extension to .mp4 by
+        default. Additionally, the size of the window is set and resizing is disabled.
+
+        :return: None
+        """
+        logging.info("Got to audio extraction window")
         self.stackedWidget.setCurrentWidget(self.ventana_convertir)
-
-        # Se establece por defecto el nombre del fichero de entrada cambiando la extension por .mp4
         self.line_edit_carpeta.setText(f"{os.path.splitext(self.lineEdit.text())[0]}.mp4")
-
         self.setFixedSize(860, 320)
 
     def check_file_exists(self):
         """
-        Metodo que verifica si el texto del cuadro de texto es un fichero valido
+        Method that checks if the source video file selected already exists
 
-        TODO De momento solo verifico si el texto no es vacio
-        :return:
+        :return: True if the video file exists
+                 False otherwise
         """
         return os.path.exists(self.lineEdit.text())
 
     def check_if_text(self, boton: QPushButton):
         """
-        Rutina que se dispara cuando se cambiar el texto de un QLineEdit y que verifica si hay o no texto en el.
+        Handler method triggered when the content of a line edit element changes.
 
-        En el caso de que haya texto, habilita la pulsacion del boton pasado como parametro.
+        This method is generic and can be applied to several line edit elements as far as we pass the right button as
+        a parameter
 
-        Esta rutina se emplea para asegurarnos que podemos pasar al siguiente paso en la aplicacion
+        If there is text in the line edit, the button passed as parameter is enabled.
+        If there is no text, the button is disabled.
 
+        The idea is to make sure we can transition to the next step in the process.
+
+        :param boton. Button to go to the next step in the process
         :return: None
         """
-        line_edit = self.sender()  # Se obtiene el objeto  que ha disparado el evento
+        line_edit = self.sender()
         if line_edit.text():
             boton.setEnabled(True)
         else:
@@ -265,81 +296,81 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def search_video_file(self):
         """
-        Metodo que se ejecuta cuando se pincha en el boton de busqueda de fichero
+        Handler method triggered when the user clicks on the button to search the source video file locally in the system
 
-        Muestra un dialogo para seleccionar el fichero de video.
-        :return:
+        Shows a QFileDialog to make the search of the file easier. The full path of the file selected is placed in the
+        line edit field.
+
+        :return: None
         """
         fname = QtWidgets.QFileDialog.getOpenFileName(self, 'Seleccionar archivo de video',
                                             'c:\\', "Video files (*.mkv);;All files (*) ")
 
-        # Si el sistema es Windows
-        # print(QtCore.QDir.toNativeSeparators(str(fname)))
-        logging.info(f"Se selecciona archivo: {str(fname[0])}")
-
-        # Se pone la ruta del archivo en el cuadro de texto
+        logging.info(f"Selected file: {str(fname[0])}")
         self.lineEdit.setText(QtCore.QDir.toNativeSeparators(str(fname[0])))
 
     def show_config(self):
         """
-        Muestra la ventana de configuracion de la aplicacion
-        :return:
+        Shows the configuration screen
+
+        This window allows us to change some application settings
+
+        :return: None
         """
-        logging.info("Acceso a pantalla configuracion")
+        logging.info("Access to configuration screen")
         self.pantalla_configuracion.show()
 
     def seleccionar_fichero_salida(self):
         """
-        Metodo que se ejecuta cuando se pincha en el boton de busqueda de fichero
+        Handler method triggered when the user clicks on "Select file" button in step 3 window.
 
-        Muestra un dialogo para seleccionar el fichero de video.
-        :return:
+        A QFileDialog shows up and allow us to select the output file. The text field next to the button is filled
+        with the path of the selected file.
+
+        :return: None
         """
         try:
-            out_filename = QtWidgets.QFileDialog.getSaveFileName(self, ("Especificar archivo de salida"),
-                                                    # "./audio.mp4",
+            out_filename = QtWidgets.QFileDialog.getSaveFileName(self, "Select output file",
                                                     os.path.splitext(self.lineEdit.text())[0],
-                                                    ("Audio (*.mp4)"))
+                                                    "Audio (*.mp4)")
 
-            logging.info(f"Se seleccionado {str(out_filename[0])} como fichero de salida")
+            logging.info(f"You have selected {str(out_filename[0])} as output file")
             self.line_edit_carpeta.setText(str(out_filename[0]))
 
         except Exception as e:
             error_logger = logging.getLogger("error_logger")
-            error_logger.critical(f"Se ha producido el error: {e}", stack_info=True)
+            error_logger.critical(f"The following error has ocurred: {e}", stack_info=True)
 
     def convertir(self):
         """
-        Metodo que se ejecuta al pulsar el boton de convertir
+        Handler method triggered when the user clicks on "Convert" button.
 
-        Crea un hilo que ejecuta el comando ffmpeg para extraer el audio. Muestra una ventana de espera para dar feedback
-        al usuario.
+        It creates a Worker object that performs the extraction of the audio on its "run" method. This object is
+        moved to a thread so the extraction is executed in the background.
 
         :return: None
         """
 
-        # Hay que verificar si el fichero realmente existe, por si se ha modificado el contenido del cuadro de texto
-
-        # Coge el nombre de la carpeta y el nombre del fichero y genera el fichero de salida
+        # Gets the output file path from the text field
         out_filename = self.line_edit_carpeta.text()
 
         self.thread = QtCore.QThread()
         self.worker = Worker(self.stream_seleccionado, out_filename, self.configuracion, self.lineEdit.text())
         self.worker.moveToThread(self.thread)
 
-        # Se mapean funciones manejadoras a los eventos del hilo
+        # We associate methods with events in the thread
         self.thread.started.connect(self.worker.run)
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.mata_gif)
         self.worker.inicio.connect(self.muestra_gif)
 
-        # Comienza la conversion
+        # Audio extraction starts
         self.thread.start()
 
     def muestra_gif(self):
         """
-        Metodo que muestra una ventana en la que aparece un gif informando al usuario que el proceso de extraccion de
-        audio esta en ejecucion
+        Method that shows a gif file to give feedback to the user while the audio is extracted.
+
         :return: None
         """
         self.ventana_espera = VentanaWait(self.configuracion)
@@ -347,15 +378,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def mata_gif(self):
         """
-        Metodo que se ejecuta cuando termina la tarea de extraer el audio
+        Method executed when the thread finishes extracting the audio.
 
-        Cierra la ventana con el gif de espera, muestra un mensaje indicando que el proceso ha temrinado y retorna a
-        la ventana principal
+        The window with the waiting gif closes and shows a QMessageBox saying that the proccess has ended.
+        The step 3 window is cleared and we go back to step 1 window
+
         :return: None
         """
         self.ventana_espera.close()
 
-        # Se un mensaje indicando que el proceso ha terminado
         msg = QtWidgets.QMessageBox()
         msg.setWindowTitle("Info")
         msg.setText(f"{self.configuracion.lang_dict[self.configuracion.config_dict['idioma']]['success_end_process']} "
@@ -363,77 +394,75 @@ class MainWindow(QtWidgets.QMainWindow):
         msg.setDefaultButton(QtWidgets.QMessageBox.Ok)
         msg.exec_()
 
-        # Limpiamos ventana_convertir
+        # Step 3 is cleared and go back to step 1 window
         self.limpia_ventana_3()
-
-        #  y volvemos a la pantalla principal
         self.go_back_to_paso_1()
 
     def limpia_ventana_1(self):
         """
-        Rutina que limpia los elementos graficos de la ventana principal
-        :return:
+        Method that clears graphic elements of step 1 window.
+
+        Empties the text field and disables "Next" button.
+
+        :return: None
         """
-
-        # Se limpia el campo de texto
         self.lineEdit.setText("")
-
-        # Se deshabilita el boton "Siguiente"
         self.but_go_to_paso2.setEnabled(False)
 
     def limpia_ventana_2(self):
         """
-        Rutina que limpia los elementos graficos de la ventana del paso 2
+        Method the clears graphic elements of step 2 window
 
-        :return:
+        Clears all labels, removes all audio stream buttons, clears "Stream information" panel and
+        disables "Next" button
+
+        :return: None
         """
 
-        # Se limpia la seccion "Informacion video"
+        # Clars labels setting its texts to ""
         self.labelNombreStr.setText("")
         self.labelResStr.setText("")
         self.labelCodecStr.setText("")
 
-        # Se eliminan los botones de la seccion "Streams de audio".
-        # NOTA. no puedo utilizar index para acceder a los elementos porque al eliminar el elemento de posicion x,
-        # el elemento de posicion x + 1 pasa a ocupar la posicion x. Entonces tengo que eliminar siempre el elemento de
-        # posicion 0
+        # This iterates over all buttons in streams_layout QVBoxLayout and removes them from the layout.
+        # NOTE. We have to use itemAt(0) because when we remove an item in position 0, the next element occupies
+        # position 0
         for _ in range(self.streams_layout.count()):
             self.streams_layout.removeWidget(self.streams_layout.itemAt(0).widget())
 
-        # Se limpia la seccion "Informacion stream"
+        # This empties "Stream information" labels by iterating over al items in valores QVBoxLayout and setting its
+        # text to ""
         for index in range(self.valores.count()):
             self.valores.itemAt(index).widget().setText("")
 
-        # Se deshabilita el boton "Siguiente"
         self.but_go_to_paso_3.setEnabled(False)
 
     def limpia_ventana_3(self):
         """
-        Rutina que limpia los elementos graficos de la ventana del paso 3
-        :return:
-        """
+        Method that clears graphic elements in step 3 window
 
-        # Limpiamos ventana_convertir
+        The text filed is emptied and "Convert" button is disabled
+
+        :return: None
+        """
         self.line_edit_carpeta.setText("")
         self.button_convertir.setEnabled(False)
 
     def traducir_textos(self):
         """
-        Rutina que se ejecuta cuando se cambia el idioma de la ventana de configuracion o cuando se arranca la
-        aplicacion para establecer los textos en el idioma actualmente configurado
+        Method executed when the curren tlanguage is changed from the configuration window or when the application
+        starts.
 
-        Modifica el texto de los elementos graficos en caliente
-        :return:
+        It changes most of the texts displayed on the screen.
+
+        :return: None
         """
-        # Culturilla. Como en python los parametros son pasados "por referencia" cuando cambio el idioma en la
-        # ventana de configuracion, el valor en self.configuracion.config_dict['idioma'] ya se ha actualizado aqui!
-        # asi que lo puedo utilizar directamente
 
-        # Se obtiene el idioma actual
+        # We get the dictionary which contains the texts in the selected language...
         dict_idioma = self.configuracion.lang_dict[self.configuracion.config_dict['idioma']]
 
-        # y se cambian todos los textos de la interfaz
-        # Se modifican los textos de la ventana principal
+        # ... and the texts on the screen are changed accordingly
+        # Main window texts
         self.setWindowTitle(dict_idioma['mainwindow.title'])
         self.label_sel_fich_video.setText(dict_idioma['label_sel_fich_video'])
         self.search_button.setText(dict_idioma['search_button'])
@@ -448,7 +477,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                  f"-qt-block-indent:0; text-indent:0px;'>{dict_idioma['info_paso_1.desc']}</p>"
                                  f"</body>")
 
-        # Textos de la ventana de seleccion de stream
+        # Stream selection window
         self.info_video_box.setTitle(dict_idioma['info_video_box.title'])
         self.labelNombre.setText(dict_idioma['info_video_box.labelNombre'])
         self.labelRes.setText(dict_idioma['info_video_box.labelRes'])
@@ -469,7 +498,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                  f"-qt-block-indent:0; text-indent:0px;'>{dict_idioma['info_paso_2.desc']}</p>"
                                  f"</body>")
 
-        # Textos de la ventana de seleccion de fichero de salida
+        # Output file selection window
         self.groupBox_2.setTitle(dict_idioma['groupBox_2.title'])
         self.but_back_to_paso_2.setText(dict_idioma['but_back_to_paso_2'])
         self.button_convertir.setText(dict_idioma['button_convertir'])
@@ -484,70 +513,93 @@ class MainWindow(QtWidgets.QMainWindow):
                                  f"-qt-block-indent:0; text-indent:0px;'>{dict_idioma['info_paso_3.desc']}</p>"
                                  f"</body>")
 
-
     def closeEvent(self, event):
-        logging.info("Finaliza la aplicacion")
+        """
+        Method that overwrites closeEvent on QObject. We simply register an application end event.
+        :param event:
+        :return: None
+        """
+        logging.info("Application ends execution")
 
 
 class Worker(QtCore.QObject):
     """
     Clase que encapsula la extracion de la pista de audio. El metodo run se ejecutara en un hilo para no congelar
     la interfaz
+
+    Attributes:
+    ----------
+    stream_seleccionado:
+        Information of the audio stream that will be extracted from the video
+
+    path_fichero_salida: String
+        Output file fuill path
+
+    configuracion: Config
+        Configuration object. Intended for text translation
+
+    path_fichero_video: String
+        Source video file full path
+
     """
 
-    # Señales para informar del estado del hilo
-    finished = QtCore.pyqtSignal()
-    inicio = QtCore.pyqtSignal()
+    # Signals used to inform about the state of the thread:
+    finished = QtCore.pyqtSignal()  # Signal emitted when the job is finished
+    inicio = QtCore.pyqtSignal()   # Signal emitted when the job if started
 
     def __init__(self, stream_seleccionado, path_fichero_salida, configuracion, path_fichero_video):
+        """
+        Constructor method. It initializes class variables
+
+        :param stream_seleccionado:
+        :param path_fichero_salida:
+        :param configuracion:
+        :param path_fichero_video:
+        """
         super(Worker, self).__init__()
         self.stream_seleccionado = stream_seleccionado
         self.path_fichero_salida = path_fichero_salida
         self.configuracion = configuracion
         self.path_fichero_video = path_fichero_video
 
-        logging.info("Se crea hilo para la extraccion del audio")
+        logging.info("Worker class is created to extract the audio")
 
     def run(self):
         """
-        Rutina que realiza el proceso de extracion del audio
+        Method that performs the extraction of the audio track
 
-        Ejecuta el comando ffmpeg con los parametros necesarios para la extraccion del audio.
-        Tanto al inicio como al final de la extraccion, la clase emite señales para notificar a la clase
-        principal el estado del proceso
+        It executes the ffmpeg command with the parameters needed to extract the audio. Both at start and end of the
+        process signals are emitted in order to notify the main thread
 
         :return: None
         """
-        inicio = time.time()
-        logging.info("Comienza la extraccion del audio:")
-        logging.info(f"Fichero origen: {self.path_fichero_video}")
-        logging.info(f"Fichero destino: {self.path_fichero_salida}")
-        self.inicio.emit()  # Se informa que el hilo ha comenzado
+        start = time.time()
+        logging.info("Audio extraction starts:")
+        logging.info(f"Source video file: {self.path_fichero_video}")
+        logging.info(f"Output audio file: {self.path_fichero_salida}")
+        self.inicio.emit()  # Main thread is informed that the extraction has started
 
-        # Si el fichero de salida existe, ffmpeg preguntara si queremos sobreescribir el fichero. Como no tenemos
-        # control sobre la entrada por teclado, con '-y' siempre sobreescribimos el fichero.
-        # No nos importa porque la seleccion del fichero de salida mediante QFileDialog.getSaveFileName ya avisa
-        # de si queremos sobreescribir el archivo
-        comando = [f"{self.configuracion.config_dict['path_ffmpeg']}\\ffmpeg.exe",
-                   "-y",
-                   "-i",
-                   self.path_fichero_video,
-                   "-map",
-                   f"0:{self.stream_seleccionado['index']}",
-                   "-acodec",
-                   "libmp3lame",
-                   self.path_fichero_salida]
+        comando = [f"{self.configuracion.config_dict['path_ffmpeg']}\\ffmpeg.exe",  # ffmpeg.exe full path
+                   "-y",  # Used to overwrite the output file if it already exists
+                   "-i",  # option to specify the input file
+                   self.path_fichero_video,  # input file
+                   "-map",  # used to select which audio stream is placed in the output file
+                   f"0:{self.stream_seleccionado['index']}",  # Audio track index
+                   "-acodec",  # to set the audio codec to use
+                   "libmp3lame",  # encoding library used to create the audio file
+                   self.path_fichero_salida  # Output full path
+                   ]
 
-        logging.debug(f"Comando para extraer el audio: {" ".join(comando)}")
+        logging.debug(f"Full command to extract the audio: {" ".join(comando)}")
         try:
-            list_files = subprocess.run(comando, capture_output=True, text=True)
+            subprocess.run(comando, capture_output=True, text=True)  # Command execution
         except Exception as e:
-            error_logger = logging.getLogger(f"Se ha producido un error: {e}")
+            logging.getLogger(f"The following errro has occurred: {e}")
         finally:
-            # Independientemente de si hay error, se informa que el proceso ha finalizado haciendo emit()
-            # de la señal "finished".
-            fin = time.time()
-            logging.info(f"Finaliza el proceso de extraccion del audio. Tiempo de proceso: {(fin - inicio):.2f}s")
+            # Regardless of failure or success in the process, we emit a signal to notify the main thread that the
+            # jos has ended
+            end = time.time()
+            logging.info(f"Audio extraction ends. Process duration: {(end - start):.2f}s")
             self.finished.emit()
 
 
