@@ -52,6 +52,7 @@ cambiar_path_button: Cambiar
 lbl_sel_lang: Seleccion idioma
 acept_config_button: Aceptar
 cancel_config_button: Cancelar
+select_ffmpeg_path_capt: Seleccionar carpeta
 
 # Waiting window texts
 wait.title: "Por favor, espere..."
